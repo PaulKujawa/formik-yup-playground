@@ -1,29 +1,25 @@
-import React from "react";
-import { CustomerResponse } from "./entities/customer";
+import { format, isBefore, isSameDay, isValid } from "date-fns";
+import * as Yup from "yup";
 
-export const useMockServerResponse = (): CustomerResponse | null => {
-  // null as initial value is what one would have as Redux initial state
-  const [
-    serverResponse,
-    setServerResponse
-  ] = React.useState<CustomerResponse | null>(null);
+export function validateDatesOrder(
+  this: Yup.TestContext,
+  firstDate?: Date,
+  secondDate?: Date,
+) {
+  // missing or invalid date is handled on the field.
+  if (!isValid(firstDate) || !isValid(secondDate) || isSameDay(firstDate!, secondDate!)) {
+      return true;
+  }
 
-  React.useEffect(() => {
-    setTimeout(() => {
-      setServerResponse({
-        id: 1,
-        age: 12,
-        dayOfBirth: "01.01.1937",
-        dayOfDeath: "12.04.2020",
-        withPets: false,
-        pets: [{ name: "Odin" }, { name: "Floki" }, { name: "Freya" }]
-      });
-    }, 2000);
-  });
+  return isBefore(firstDate!, secondDate!)
+    ? true
+    : this.createError({ message: 'dates are in wrong order' });
+}
 
-  return serverResponse;
-};
-
+/*
+ * Before entities become put into forms, they become hydrated with empty strings.
+ * To avoid storing these values on BE side, they need to become reverted.  
+ */
 export const deepConversionOfEmptyStringToNull = (value: any): any => {
   if (value === "") {
     return null;
@@ -46,18 +42,7 @@ export const deepConversionOfEmptyStringToNull = (value: any): any => {
   );
 };
 
-// export const useTimeBasedRerender = () => {
-//   const [rendered, setRendered] = React.useState(1);
+export function formatDateToString(date: Date | string, pattern = 'dd.MM.yyyy'): string {
+  return format(typeof date === 'string' ? new Date(date) : date, pattern);
+}
 
-//   React.useEffect(() => {
-//     setTimeout(() => {
-//       console.log('--- local state change ---');
-//       setRendered(++rendered);
-//     }, 1000);
-
-//     setTimeout(() => {
-//       console.log('--- store state change ---');
-//       store.dispatch({type: 'ADD_RND', text: Math.random()})
-//     }, 2000);
-//   }, []);
-// }
